@@ -101,6 +101,26 @@ excluded from scoring and reported separately.
 
 ## Changelog
 
+### 2026-09-07 -- Open-weight scope: Qwen pair only, DeepSeek deferred
+
+**Decision.** The zero-shot open-weight arm runs `qwen2.5-coder-7b` and
+`qwen2.5-7b` only. `deepseek-coder-v2-lite` is deferred.
+
+**Why.** Hardware: single RTX 4090, 24 GB VRAM, and only 66 GB free disk.
+DeepSeek-Coder-V2-Lite is a 16B MoE needing ~31 GB in bf16, so it does not fit
+in 24 GB and would have to run 4-bit while the two Qwen models run bf16. That
+precision mismatch confounds RQ2 -- a lower DeepSeek score could be
+quantisation rather than model quality -- and the extra 31 GB download would
+leave the disk at ~20 GB free.
+
+The Qwen pair is the cleaner comparison anyway: same family, same size, same
+precision, differing only in coding specialisation, which is exactly the RQ2
+contrast (`Qwen2.5-Coder-7B-Instruct` vs `Qwen2.5-7B-Instruct`).
+
+**To add DeepSeek later:** run it 4-bit via `--load-in-4bit`, and either
+re-run both Qwen models 4-bit for a like-for-like comparison or report the
+precision difference explicitly. Add a changelog entry when you do.
+
 ### 2026-09-07 -- GPT-5.1: reasoning_effort removed, temperature=0 and seed=42 restored
 
 **What changed.** `OpenAIClient` defaults are now `temperature=0.0`,
@@ -174,6 +194,13 @@ documented in `README.md`.
 * **COJ2022 `Undefined` (43.6%).** Currently dropped at subtype granularity. The
   `--granularity type` run over all 5,885 programs has not been done and would
   answer whether coarse-level verification is easier.
+* **Problem diversity in the PyMETA test split is low.** `problem_disjoint` at
+  0.7/0.1/0.2 puts 387 submissions in test but only **25 distinct questionIds**
+  (COJ2022 test has 83 problems from 339 programs). The bootstrap clusters by
+  submission, so the CIs do not reflect problem-level variance, and results
+  should be read as "on these 25 problems". Raising `--cap` does not help --
+  it adds submissions, not problems. Options: widen the test ratio, or add a
+  problem-level bootstrap. Not yet decided.
 * **P2 / C2 ablation.** Not yet run.
 * **SFT.** Not yet run. Train one adapter per dataset; do not pool the taxonomies.
 
