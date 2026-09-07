@@ -18,7 +18,10 @@ HTTP 200 with no usable answer, and would otherwise look like an empty response.
 from __future__ import annotations
 
 from ..env import get_api_key
-from .base import ERROR, Prediction, RetryingClient, parse_label
+from .base import (
+    ERROR, UNSUPPORTED_BY_PROVIDER, ParameterRejectedError, Prediction,
+    RetryingClient, parse_label,
+)
 
 MODEL = "claude-sonnet-4-6"
 
@@ -50,6 +53,7 @@ class AnthropicClient(RetryingClient):
         temperature: float | None = 0.0,
         max_tokens: int = 1024,
         max_retries: int = 5,
+        strict_params: bool = True,
     ) -> None:
         import anthropic
 
@@ -61,6 +65,21 @@ class AnthropicClient(RetryingClient):
         self._client = anthropic.Anthropic(api_key=get_api_key("anthropic"))
         self._use_tool = True
         self._use_strict = True
+        self._init_params({
+            "temperature": temperature,
+            # The Messages API exposes no seed. Recorded rather than left blank so
+            # the write-up cannot claim all three models were seed-pinned: Gemini
+            # and GPT-5.1 take seed=42, Claude cannot.
+            "seed": UNSUPPORTED_BY_PROVIDER,
+            "max_tokens": max_tokens,
+            "thinking": "omitted (no extended thinking; keeps temperature usable)",
+            "structured_output": "forced tool use (strict)",
+        }, strict_params=strict_params)
+        self.record_param_event(
+            "seed", "unsupported_by_provider", "",
+            "anthropic.messages.create has no seed parameter; Claude runs are not "
+            "seed-pinned and are expected to vary slightly between runs",
+        )
 
     def _request_kwargs(self, system: str, user: str) -> dict:
         kwargs: dict = {
@@ -85,11 +104,19 @@ class AnthropicClient(RetryingClient):
             return False
         if self._use_strict:
             self._use_strict = False
-            print(f"    [{self.name}] API rejected strict tools; retrying without", flush=True)
+            self.effective_params["structured_output"] = "forced tool use (non-strict)"
+            self.record_param_event(
+                "structured_output", "changed", message,
+                "strict tool schema rejected; retrying without strict",
+            )
             return True
         if self._use_tool:
             self._use_tool = False
-            print(f"    [{self.name}] API rejected forced tool use; falling back to text", flush=True)
+            self.effective_params["structured_output"] = "free text + regex parse"
+            self.record_param_event(
+                "structured_output", "changed", message,
+                "forced tool use rejected; falling back to text parsing",
+            )
             return True
         return False
 
@@ -99,7 +126,20 @@ class AnthropicClient(RetryingClient):
         try:
             response = self._client.messages.create(**self._request_kwargs(system, user))
         except anthropic.BadRequestError as exc:
-            if self._degrade(str(exc)):
+            message = str(exc)
+            if "temperature" in message.lower():
+                if self.strict_params:
+                    raise ParameterRejectedError(
+                        self.name, "temperature", message, self.requested_params
+                    ) from exc
+                if self._temperature is not None:
+                    self._temperature = None
+                    self.record_param_event(
+                        "temperature", "dropped", message,
+                        "strict_params=False: continuing at the API default",
+                    )
+                    return self._call(system, user)
+            if self._degrade(message):
                 return self._call(system, user)
             raise
 

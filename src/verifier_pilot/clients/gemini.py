@@ -35,7 +35,7 @@ from __future__ import annotations
 import json
 
 from ..env import get_api_key
-from .base import ERROR, Prediction, RetryingClient, parse_label
+from .base import ERROR, ParameterRejectedError, Prediction, RetryingClient, parse_label
 
 MODEL = "gemini-2.5-flash"
 
@@ -64,20 +64,33 @@ class GeminiClient(RetryingClient):
         model: str = MODEL,
         name: str | None = None,
         temperature: float = 0.0,
+        seed: int | None = 42,
         max_output_tokens: int = 256,
         thinking_budget: int = 0,
         max_retries: int = 5,
+        strict_params: bool = True,
     ) -> None:
         from google import genai  # imported lazily so other providers work without it
 
         self.model = model
         self.name = name or model
         self.temperature = temperature
+        self.seed = seed
         self.max_output_tokens = max_output_tokens
         self.thinking_budget = thinking_budget
         self.max_retries = max_retries
         self._client = genai.Client(api_key=get_api_key("gemini"))
         self._safety_mode_index = 0
+        self._init_params({
+            "temperature": temperature,
+            "seed": seed,
+            "max_output_tokens": max_output_tokens,
+            # not a default: 2.5 Flash thinks by default and can spend the whole
+            # output budget on it, returning zero text parts. See module docstring.
+            "thinking_budget": thinking_budget,
+            "safety_threshold": _SAFETY_MODES[0],
+            "response_schema": "label enum(aligned,not_aligned)",
+        }, strict_params=strict_params)
 
     # ---- config -----------------------------------------------------------
     def _safety_settings(self):
@@ -101,6 +114,8 @@ class GeminiClient(RetryingClient):
             temperature=self.temperature,
             max_output_tokens=self.max_output_tokens,
         )
+        if self.seed is not None:
+            kwargs["seed"] = self.seed
         safety = self._safety_settings()
         if safety is not None:
             kwargs["safety_settings"] = safety
@@ -111,14 +126,21 @@ class GeminiClient(RetryingClient):
             )
         return types.GenerateContentConfig(**kwargs)
 
-    def _degrade_safety(self) -> bool:
-        """Advance to the next safety strategy. False when none are left."""
+    def _degrade_safety(self, raw_error: str = "") -> bool:
+        """Advance to the next safety strategy. False when none are left.
+
+        Recorded as a parameter event so the run manifest shows which safety
+        threshold the results were actually produced under. This fallback is
+        allowed even under strict_params because the threshold does not affect
+        sampling -- but it is never silent.
+        """
         if self._safety_mode_index + 1 < len(_SAFETY_MODES):
             self._safety_mode_index += 1
-            print(
-                f"    [{self.name}] safety setting rejected; falling back to "
-                f"{_SAFETY_MODES[self._safety_mode_index]!r}",
-                flush=True,
+            new_mode = _SAFETY_MODES[self._safety_mode_index]
+            self.effective_params["safety_threshold"] = new_mode
+            self.record_param_event(
+                "safety_threshold", "changed", raw_error,
+                f"rejected; falling back to {new_mode!r}",
             )
             return True
         return False
@@ -159,8 +181,25 @@ class GeminiClient(RetryingClient):
             message = str(exc).lower()
             # Cause (2): the safety threshold itself was rejected -- retune, retry.
             if ("safety" in message or "harmblockthreshold" in message
-                    or "block_none" in message) and self._degrade_safety():
+                    or "block_none" in message) and self._degrade_safety(str(exc)):
                 return self._call(system, user)
+            # A rejected sampling parameter must not be swallowed.
+            if "400" in message and ("seed" in message or "temperature" in message
+                                     or "thinking" in message):
+                parameter = next(
+                    (p for p in ("seed", "temperature", "thinking_budget") if p in message), None
+                )
+                if self.strict_params:
+                    raise ParameterRejectedError(
+                        self.name, parameter, str(exc), self.requested_params
+                    ) from exc
+                if parameter == "seed" and self.seed is not None:
+                    self.seed = None
+                    self.record_param_event(
+                        "seed", "dropped", str(exc),
+                        "strict_params=False: continuing without it",
+                    )
+                    return self._call(system, user)
             raise
 
         raw = self._extract_text(response)

@@ -3,6 +3,11 @@
 A pilot study on **PyMETA** (Python interpreter errors) and **COJ2022** (C/C++
 semantic implementation errors).
 
+> **[EXPERIMENT_LOG.md](EXPERIMENT_LOG.md) is the authoritative record of current
+> experimental settings and every change to them.** Read it before running
+> anything, and add a dated entry whenever you change a sampling parameter, a
+> split, the pair protocol, a prompt, or a model id.
+
 The task is **target-conditioned binary alignment verification**, not error
 classification:
 
@@ -211,6 +216,20 @@ instead of macro F1 and marked `a`.
 
 API failures are counted and reported but **excluded** from scoring -- treating
 a quota error as a wrong answer confounds model quality with run health.
+
+### Sampling parameters are part of the record
+
+All models run at **temperature 0** and **seed 42** wherever those exist. Two
+provider limits are recorded rather than hidden: Claude Sonnet 4.6 has no `seed`
+parameter, and GPT-5.1 rejects `temperature=0` if `reasoning_effort` is set (so
+`reasoning_effort` is left unset -- see EXPERIMENT_LOG.md).
+
+A parameter the API rejects is **never dropped silently**. By default the run
+aborts with the raw provider error; `--allow-param-fallback` permits the drop.
+Either way every run writes
+`outputs/raw/<model>__<dataset>__<condition>.manifest.json` with the requested
+parameters, the effective parameters, and every parameter event with its raw
+API error, and prints the same requested-vs-effective table to the console.
 
 ---
 

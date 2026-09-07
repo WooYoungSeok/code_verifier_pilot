@@ -96,5 +96,7 @@ def build(name: str, **overrides) -> VerifierClient:
         return AnthropicClient(model=spec.model_id, name=spec.name, **kwargs)
     if spec.provider == "local":
         from .hf_local import HFLocalClient
+        # greedy decoding has no sampling parameters to reject
+        kwargs.pop("strict_params", None)
         return HFLocalClient(model_id=spec.model_id, name=spec.name, **kwargs)
     raise SystemExit(f"unknown provider {spec.provider!r} for model {name!r}")

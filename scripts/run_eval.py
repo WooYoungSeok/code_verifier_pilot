@@ -62,6 +62,11 @@ def main() -> int:
     parser.add_argument("--adapter", default=None, help="LoRA adapter path (local models)")
     parser.add_argument("--name", default=None, help="override the result/model name")
     parser.add_argument("--load-in-4bit", action="store_true")
+    parser.add_argument("--allow-param-fallback", action="store_true",
+                        help="permit dropping a sampling parameter the API rejects. "
+                             "Off by default: a rejected parameter aborts the run so the "
+                             "change is a decision, not a silent side effect. Any drop is "
+                             "recorded in the run manifest either way.")
     parser.add_argument("--out", type=Path, default=None)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent)
     args = parser.parse_args()
@@ -87,7 +92,7 @@ def main() -> int:
 
     summary: dict[str, dict] = {}
     for model_name in model_names:
-        client_kwargs: dict = {}
+        client_kwargs: dict = {"strict_params": not args.allow_param_fallback}
         if args.adapter:
             client_kwargs["adapter_path"] = args.adapter
         if args.load_in_4bit:

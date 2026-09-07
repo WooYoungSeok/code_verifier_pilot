@@ -39,6 +39,7 @@ class HFLocalClient(VerifierClient):
         constrained: bool = True,
         max_new_tokens: int = 8,
         max_input_tokens: int = 8192,
+        seed: int = 42,
     ) -> None:
         import torch
         from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -49,6 +50,20 @@ class HFLocalClient(VerifierClient):
         self.max_new_tokens = max_new_tokens
         self.max_input_tokens = max_input_tokens
         self._torch = torch
+
+        torch.manual_seed(seed)
+        self._init_params({
+            # greedy: the open-weight equivalent of temperature 0, so the
+            # comparison against the seed-pinned API models is like-for-like
+            "decoding": "greedy (do_sample=False)",
+            "temperature": "n/a (greedy)",
+            "seed": seed,
+            "answer_channel": "constrained 2-way logit comparison" if constrained
+                              else "free generation + regex parse",
+            "max_input_tokens": max_input_tokens,
+            "dtype": "4bit-nf4" if load_in_4bit else dtype,
+            "adapter": adapter_path or None,
+        }, strict_params=True)
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_id, trust_remote_code=True)
         if self.tokenizer.pad_token_id is None:

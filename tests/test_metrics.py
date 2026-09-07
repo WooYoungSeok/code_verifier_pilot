@@ -111,3 +111,47 @@ def test_identical_models_show_no_difference():
     result = bootstrap.paired_comparison(rows, list(rows), resamples=100, seed=1)
     assert result["diff"] == 0
     assert not result["significant"]
+
+
+# --- sampling-parameter provenance -------------------------------------------
+
+def test_param_manifest_records_requested_and_effective():
+    from verifier_pilot.clients.base import VerifierClient
+
+    class Dummy(VerifierClient):
+        name, provider = "dummy", "test"
+        def predict(self, system, user): ...
+
+    client = Dummy()
+    client._init_params({"temperature": 0.0, "seed": 42}, strict_params=False)
+    manifest = client.params_manifest()
+    assert manifest["requested"] == {"temperature": 0.0, "seed": 42}
+    assert manifest["effective"] == {"temperature": 0.0, "seed": 42}
+    assert manifest["param_events"] == []
+
+
+def test_dropped_parameter_is_recorded_with_the_raw_error():
+    from verifier_pilot.clients.base import VerifierClient
+
+    class Dummy(VerifierClient):
+        name, provider = "dummy", "test"
+        def predict(self, system, user): ...
+
+    client = Dummy()
+    client._init_params({"temperature": 0.0}, strict_params=False)
+    client.record_param_event("temperature", "dropped", "400 unsupported_value", "test")
+
+    manifest = client.params_manifest()
+    assert manifest["requested"]["temperature"] == 0.0
+    assert "dropped" in str(manifest["effective"]["temperature"])
+    assert manifest["param_events"][0]["raw_error"] == "400 unsupported_value"
+
+
+def test_parameter_rejected_error_carries_the_raw_provider_error():
+    from verifier_pilot.clients.base import ParameterRejectedError
+
+    exc = ParameterRejectedError("gpt-5.1", "temperature", "400 unsupported_value", {"temperature": 0.0})
+    assert exc.parameter == "temperature"
+    assert exc.raw_error == "400 unsupported_value"
+    assert "temperature" in str(exc)
+    assert "--allow-param-fallback" in str(exc)

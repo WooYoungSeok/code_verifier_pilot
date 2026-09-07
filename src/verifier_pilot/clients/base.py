@@ -1,4 +1,12 @@
-"""Verifier client contract, shared retry policy, and answer parsing."""
+"""Verifier client contract, shared retry policy, and answer parsing.
+
+Sampling parameters are treated as part of the experimental record. A parameter
+the API refuses is never dropped silently: in the default ``strict_params`` mode
+the run aborts with the raw provider error, and with ``strict_params=False`` the
+drop is logged loudly *and* recorded in ``param_events``, which the runner writes
+into the run manifest alongside the results. A verifier scored under a
+temperature the write-up does not know about is a silently invalid experiment.
+"""
 
 from __future__ import annotations
 
@@ -12,6 +20,38 @@ ALIGNED = "aligned"
 NOT_ALIGNED = "not_aligned"
 ERROR = "error"
 VALID_LABELS = (ALIGNED, NOT_ALIGNED)
+
+#: recorded when a provider has no equivalent of a parameter we standardise on
+UNSUPPORTED_BY_PROVIDER = "<unsupported_by_provider>"
+
+
+class ParameterRejectedError(RuntimeError):
+    """The API refused a sampling parameter and strict_params is on.
+
+    Carries the raw provider error so the decision -- change the parameter, or
+    accept the fallback and say so in the write-up -- is made by a person.
+    """
+
+    def __init__(self, model: str, parameter: str | None, raw_error: str, requested: dict):
+        self.model = model
+        self.parameter = parameter
+        self.raw_error = raw_error
+        self.requested = dict(requested)
+        super().__init__(
+            f"\n{'=' * 72}\n"
+            f"{model}: the API rejected parameter {parameter!r}.\n"
+            f"{'=' * 72}\n"
+            f"requested parameters : {requested}\n\n"
+            f"raw provider error:\n  {raw_error}\n\n"
+            f"This is NOT dropped automatically, because running with different\n"
+            f"sampling parameters than the ones you recorded invalidates the\n"
+            f"comparison. Choose one and record it in EXPERIMENT_LOG.md:\n"
+            f"  1. change the parameter (e.g. drop reasoning_effort to keep\n"
+            f"     temperature=0 on gpt-5.1), or\n"
+            f"  2. re-run with --allow-param-fallback to let the client drop it;\n"
+            f"     the drop is then written into the run manifest.\n"
+            f"{'=' * 72}"
+        )
 
 
 @dataclass
@@ -111,6 +151,51 @@ class VerifierClient(abc.ABC):
     #: "gemini" | "openai" | "anthropic" | "local"
     provider: str
     max_retries: int = 5
+    #: abort rather than silently drop a rejected sampling parameter
+    strict_params: bool = True
+
+    #: what we asked for, and what the API actually honoured
+    requested_params: dict
+    effective_params: dict
+    #: every rejection/fallback, with the raw provider error
+    param_events: list[dict]
+
+    def _init_params(self, requested: dict, strict_params: bool = True) -> None:
+        """Call from __init__ once the requested sampling parameters are known."""
+        self.strict_params = strict_params
+        self.requested_params = dict(requested)
+        self.effective_params = dict(requested)
+        self.param_events = []
+
+    def record_param_event(
+        self, parameter: str | None, action: str, raw_error: str = "", detail: str = ""
+    ) -> None:
+        """Log a parameter change so it reaches the run manifest, not just stdout."""
+        self.param_events.append({
+            "parameter": parameter,
+            "action": action,               # "dropped" | "unsupported_by_provider" | "changed"
+            "raw_error": raw_error[:1000],
+            "detail": detail,
+        })
+        if action == "dropped":
+            self.effective_params[parameter] = f"<dropped: {raw_error[:120]}>"
+        print(
+            f"    [{self.name}] PARAMETER {action.upper()}: {parameter!r}"
+            + (f" -- {detail}" if detail else "")
+            + (f"\n      raw error: {raw_error[:300]}" if raw_error else ""),
+            flush=True,
+        )
+
+    def params_manifest(self) -> dict:
+        """The sampling provenance for this client, for the run manifest."""
+        return {
+            "model": getattr(self, "model", self.name),
+            "provider": self.provider,
+            "strict_params": self.strict_params,
+            "requested": getattr(self, "requested_params", {}),
+            "effective": getattr(self, "effective_params", {}),
+            "param_events": getattr(self, "param_events", []),
+        }
 
     @abc.abstractmethod
     def predict(self, system: str, user: str) -> Prediction:
@@ -146,6 +231,10 @@ class RetryingClient(VerifierClient):
                 prediction.attempts = attempt + 1
                 prediction.latency_s = round(time.monotonic() - started, 3)
                 return prediction
+            except ParameterRejectedError:
+                # Never swallowed into a Prediction.failure: a rejected sampling
+                # parameter must stop the run, not become one more error row.
+                raise
             except Exception as exc:  # noqa: BLE001 - provider SDKs raise many types
                 kind, retryable = classify_error(exc)
                 last_kind, last_detail = kind, f"{type(exc).__name__}: {exc}"
