@@ -1,0 +1,25 @@
+# ---- core ----
+pandas>=2.0
+numpy>=1.24
+scikit-learn>=1.3
+tqdm>=4.66
+python-dotenv>=1.0
+PyYAML>=6.0
+
+# ---- closed-source verifier APIs ----
+google-genai>=1.0          # Gemini 2.5 Flash
+openai>=1.60               # GPT-5.1
+anthropic>=0.40            # Claude Sonnet 4.6
+
+# ---- open-weight verifiers (zero-shot + LoRA SFT) ----
+# Install a CUDA build of torch first, matched to your driver:
+#   https://pytorch.org/get-started/locally/
+torch>=2.2
+transformers>=4.44
+accelerate>=0.33
+peft>=0.12
+datasets>=2.20
+bitsandbytes>=0.43 ; sys_platform != "darwin"   # QLoRA 4-bit
+
+# ---- dev ----
+pytest>=8.0
