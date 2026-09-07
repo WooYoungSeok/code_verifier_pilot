@@ -10,17 +10,25 @@ Serves both roles in the pilot:
 Decoding is greedy (``do_sample=False``), the open-weight equivalent of
 temperature 0, so the comparison against the API models is like-for-like.
 
-Rather than free-generate and regex the result, the answer is read as a
-**constrained two-way choice**: we score the single next token for the
-continuation ``aligned`` vs ``not`` after the chat template. That removes
-parse failures entirely, makes the open models directly comparable to the
-schema-constrained API models, and yields a calibrated margin for free.
-Set ``constrained=False`` to generate text instead.
+The answer is read by **generating it and parsing the text**, matching how the
+API models answer (they generate a complete JSON object under a schema) and how
+the reward-model evaluations this pilot follows read open-weight models.
+
+``constrained=True`` selects an alternative channel that compares the logits of
+the first token of each answer. **Do not use it for reported results.**
+``not_aligned`` tokenises to ``['not', '_aligned']``, so that comparison is
+between the rare token ``aligned`` and the very common generic token ``not``,
+whose much higher prior collapses the verifier: measured on Qwen2.5-Coder-7B it
+predicted ``aligned`` for 18.3% of PyMETA pairs and 1.8% of COJ2022 pairs
+against a 33.3% base rate, with median logit margins of -2.25 and -4.38. It is
+kept only so that artefact stays reproducible.
 """
 
 from __future__ import annotations
 
-from .base import ALIGNED, ERROR, NOT_ALIGNED, Prediction, VerifierClient
+from .base import (
+    ALIGNED, ERROR, MAX_ANSWER_TOKENS, NOT_ALIGNED, Prediction, VerifierClient,
+)
 
 ANSWER_PREFIX = "Answer:"
 
@@ -36,8 +44,8 @@ class HFLocalClient(VerifierClient):
         dtype: str = "bfloat16",
         device_map: str = "auto",
         load_in_4bit: bool = False,
-        constrained: bool = True,
-        max_new_tokens: int = 8,
+        constrained: bool = False,
+        max_new_tokens: int = MAX_ANSWER_TOKENS,
         max_input_tokens: int = 8192,
         seed: int = 42,
     ) -> None:
@@ -58,8 +66,9 @@ class HFLocalClient(VerifierClient):
             "decoding": "greedy (do_sample=False)",
             "temperature": "n/a (greedy)",
             "seed": seed,
-            "answer_channel": "constrained 2-way logit comparison" if constrained
-                              else "free generation + regex parse",
+            "answer_channel": "first-token logit comparison (BIASED, see docstring)"
+                              if constrained else "greedy generation + parse",
+            "max_new_tokens": max_new_tokens,
             "max_input_tokens": max_input_tokens,
             "dtype": "4bit-nf4" if load_in_4bit else dtype,
             "adapter": adapter_path or None,
@@ -90,13 +99,14 @@ class HFLocalClient(VerifierClient):
             self.name = name or f"{model_id.split('/')[-1]}-sft"
         self.model.eval()
 
-        # First sub-token of each verbalised answer, scored against each other.
-        self._aligned_id = self._first_token(ALIGNED)
-        self._not_id = self._first_token("not_aligned")
-        if self._aligned_id == self._not_id:
-            raise RuntimeError(
-                f"{model_id} tokenises 'aligned' and 'not_aligned' to the same first "
-                f"token; use constrained=False for this model"
+        if self.constrained:
+            self._aligned_id = self._first_token(ALIGNED)
+            self._not_id = self._first_token("not_aligned")
+            print(
+                f"    [{self.name}] WARNING: constrained first-token channel is biased "
+                f"(comparing {self.tokenizer.decode([self._aligned_id])!r} against "
+                f"{self.tokenizer.decode([self._not_id])!r}); do not report these numbers",
+                flush=True,
             )
 
     def _first_token(self, text: str) -> int:

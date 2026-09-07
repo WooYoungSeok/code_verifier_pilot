@@ -155,3 +155,24 @@ def test_parameter_rejected_error_carries_the_raw_provider_error():
     assert exc.raw_error == "400 unsupported_value"
     assert "temperature" in str(exc)
     assert "--allow-param-fallback" in str(exc)
+
+
+def test_params_manifest_is_json_serialisable_for_local_clients():
+    """Local clients hold an nn.Module in .model; the manifest must not carry it."""
+    import json
+    from verifier_pilot.clients.base import VerifierClient
+
+    class FakeModule:            # stands in for a loaded transformers model
+        pass
+
+    class Local(VerifierClient):
+        name, provider = "qwen2.5-coder-7b", "local"
+        model_id = "Qwen/Qwen2.5-Coder-7B-Instruct"
+        model = FakeModule()
+        def predict(self, system, user): ...
+
+    client = Local()
+    client._init_params({"decoding": "greedy", "seed": 42})
+    manifest = client.params_manifest()
+    assert manifest["model"] == "Qwen/Qwen2.5-Coder-7B-Instruct"
+    json.dumps(manifest)         # must not raise

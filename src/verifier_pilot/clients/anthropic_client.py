@@ -19,8 +19,8 @@ from __future__ import annotations
 
 from ..env import get_api_key
 from .base import (
-    ERROR, UNSUPPORTED_BY_PROVIDER, ParameterRejectedError, Prediction,
-    RetryingClient, parse_label,
+    ERROR, MAX_ANSWER_TOKENS, UNSUPPORTED_BY_PROVIDER, ParameterRejectedError,
+    Prediction, RetryingClient, parse_label,
 )
 
 MODEL = "claude-sonnet-4-6"
@@ -51,7 +51,7 @@ class AnthropicClient(RetryingClient):
         model: str = MODEL,
         name: str | None = None,
         temperature: float | None = 0.0,
-        max_tokens: int = 1024,
+        max_tokens: int = MAX_ANSWER_TOKENS,
         max_retries: int = 5,
         strict_params: bool = True,
     ) -> None:

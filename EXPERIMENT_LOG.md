@@ -27,21 +27,31 @@ Binary, target-conditioned. Not N-way classification.
 | `gemini-2.5-flash` | `gemini-2.5-flash` | gemini | closed |
 | `claude-sonnet-4.6` | `claude-sonnet-4-6` | anthropic | closed |
 | `qwen2.5-coder-7b` | `Qwen/Qwen2.5-Coder-7B-Instruct` | local | open |
-| `deepseek-coder-v2-lite` | `deepseek-ai/DeepSeek-Coder-V2-Lite-Instruct` | local | open |
+| `deepseek-coder-v2-lite` | `deepseek-ai/DeepSeek-Coder-V2-Lite-Instruct` | local | **excluded from groups** -- see 2026-09-07 entry |
 | `qwen2.5-7b` | `Qwen/Qwen2.5-7B-Instruct` | local | open (specialisation control) |
 
 Defined in `src/verifier_pilot/clients/registry.py`.
 
 ### Sampling parameters
 
-**temperature = 0 and seed = 42 everywhere they exist.**
+**temperature = 0, seed = 42 everywhere it exists, and one shared output cap.**
+
+`MAX_ANSWER_TOKENS = 64` in `clients/base.py` is used by all four clients, so the
+answer budget is not a per-model variable. Measured output maxima: 20 tokens
+(gpt-5.1), 35 (claude, tool_use block), 6 (gemini) -- the cap never binds. If a
+run ever reports `finish_reason` `length` / `max_tokens`, raise it there for all
+models at once and add a changelog entry.
+
+**Answer channel** (must match across models or it confounds open-vs-closed):
+gpt-5.1 `response_format` json_schema strict; gemini `response_schema` enum;
+claude forced tool use strict; open-weight greedy generation + parse.
 
 | model | temperature | seed | notes |
 |-------|-------------|------|-------|
 | gpt-5.1 | **0.0** | **42** | `reasoning_effort` deliberately **unset** -- see 2026-09-07 entry |
 | gemini-2.5-flash | **0.0** | **42** | `thinking_budget=0`, `safety_threshold=OFF`, `max_output_tokens=256` |
 | claude-sonnet-4.6 | **0.0** | **not available** | Messages API has no seed; `thinking` omitted |
-| open-weight | n/a (greedy) | 42 | `do_sample=False`; constrained 2-way logit comparison |
+| open-weight | n/a (greedy) | 42 | `do_sample=False`, `max_new_tokens=32`, generate + parse |
 
 **Known limitation to state in the write-up:** Claude Sonnet 4.6 cannot be
 seed-pinned -- `anthropic.messages.create` exposes no seed parameter, verified
@@ -100,6 +110,63 @@ excluded from scoring and reported separately.
 ---
 
 ## Changelog
+
+### 2026-09-07 -- Output-token cap unified at 64 for every model
+
+**What changed.** `MAX_ANSWER_TOKENS = 64` in `clients/base.py`, used by all four
+clients. Previously gpt-5.1 512, claude 1024, gemini 256, open-weight 32.
+
+**Why.** The answer budget was a per-model variable for no reason.
+
+**Does not invalidate anything.** The caps never bound: across the collected
+runs every gpt-5.1 response finished with `stop` (max 20 output tokens), every
+claude response with `tool_use` (max 35), gemini max 6, and no run reported
+`length` or `max_tokens`. A cap that is never reached does not affect the
+output, so results collected under the old per-model caps remain valid and
+comparable. Verified by inspecting `finish_reason` and `usage.output_tokens` in
+every cached record before changing the value.
+
+### 2026-09-07 -- Open-weight answer channel: back to generation + parse
+
+**What changed.** `HFLocalClient` defaults to `constrained=False`: the answer is
+now produced by greedy generation (`do_sample=False`, `max_new_tokens=32`) and
+parsed from the text, matching how the reward-model evaluations this pilot
+follows read open-weight models, and matching what the API models do (they
+generate a complete JSON object under a schema).
+
+**Why.** The previous default compared the logits of the first token of each
+answer. `not_aligned` tokenises to `['not', '_aligned']`, so the comparison was
+between the rare token `aligned` and the very common generic token `not`. The
+prior on `not` dominated and the verifier collapsed:
+
+| dataset | true aligned rate | predicted aligned | median logit margin |
+|---------|-------------------|-------------------|---------------------|
+| PyMETA  | 33.3% | 18.3% | -2.25 |
+| COJ2022 | 33.3% | **1.8%** | -4.38 |
+
+At 1.8% the COJ verifier is effectively a constant `not_aligned` predictor. That
+is a measurement artefact, not model capability, and it confounded RQ2 -- the
+open-vs-closed comparison the arm exists to make, since the closed models were
+answering through a completely different channel.
+
+`constrained=True` is still available and now prints a warning naming the two
+tokens being compared, so the artefact stays reproducible but cannot be reported
+by accident.
+
+**Invalidates.** All `qwen2.5-coder-7b` results (PyMETA P1 1,161 pairs, COJ2022
+C1 1,017 pairs). Caches deleted; the PyMETA numbers quoted in conversation
+(macro F1 0.5849, aligned recall 0.2972) are void.
+
+### 2026-09-07 -- Excluded models are excluded in code, not just in this log
+
+**What changed.** `registry.GROUPS` now filters through
+`EXCLUDED_FROM_GROUPS`, and `resolve()` prints the exclusion reason.
+
+**Why.** The previous entry recorded the decision to drop
+`deepseek-coder-v2-lite`, but the `open` group was still derived from every
+model with `group == "open"`. `--models open` therefore started a 31 GB
+DeepSeek download mid-run, which was killed and deleted with the disk at 98%
+full. A decision recorded only in prose is not a decision the code makes.
 
 ### 2026-09-07 -- Open-weight scope: Qwen pair only, DeepSeek deferred
 

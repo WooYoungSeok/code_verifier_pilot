@@ -38,7 +38,10 @@ from __future__ import annotations
 import json
 
 from ..env import get_api_key
-from .base import ERROR, ParameterRejectedError, Prediction, RetryingClient, parse_label
+from .base import (
+    ERROR, MAX_ANSWER_TOKENS, ParameterRejectedError, Prediction, RetryingClient,
+    parse_label,
+)
 
 MODEL = "gpt-5.1"
 
@@ -67,7 +70,7 @@ class OpenAIClient(RetryingClient):
         temperature: float | None = 0.0,
         reasoning_effort: str | None = None,
         seed: int | None = 42,
-        max_completion_tokens: int = 512,
+        max_completion_tokens: int = MAX_ANSWER_TOKENS,
         max_retries: int = 5,
         strict_params: bool = True,
     ) -> None:

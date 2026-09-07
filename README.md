@@ -219,13 +219,35 @@ a quota error as a wrong answer confounds model quality with run health.
 
 ### Sampling parameters are part of the record
 
-All models run at **temperature 0** and **seed 42** wherever those exist. Two
-provider limits are recorded rather than hidden: Claude Sonnet 4.6 has no `seed`
-parameter, and GPT-5.1 rejects `temperature=0` if `reasoning_effort` is set (so
-`reasoning_effort` is left unset -- see EXPERIMENT_LOG.md).
+All models run at **temperature 0**, **seed 42** wherever it exists, and the
+**same 64-token output cap** (`MAX_ANSWER_TOKENS`) so the answer budget is not a
+per-model variable. Measured maxima are 20 tokens (gpt-5.1), 35 (claude), 6
+(gemini), so the cap never binds.
 
-A parameter the API rejects is **never dropped silently**. By default the run
-aborts with the raw provider error; `--allow-param-fallback` permits the drop.
+Two provider limits are recorded rather than hidden: Claude Sonnet 4.6 has no
+`seed` parameter, and GPT-5.1 rejects `temperature=0` if `reasoning_effort` is
+set (so `reasoning_effort` is left unset -- see EXPERIMENT_LOG.md).
+
+**How each model is asked for its answer**, which has to match across the
+comparison or it confounds the open-vs-closed contrast:
+
+| model | answer channel |
+|-------|----------------|
+| gpt-5.1 | `response_format` json_schema, `strict: true` |
+| gemini-2.5-flash | `response_schema` enum |
+| claude-sonnet-4.6 | forced tool use, strict schema |
+| open-weight | greedy generation, then parse the text |
+
+An earlier version read the open-weight answer as a first-token logit
+comparison. Because `not_aligned` tokenises to `['not', '_aligned']`, that pits
+the rare token `aligned` against the very common `not` and collapsed the
+verifier (1.8% aligned predictions on COJ2022 against a 33.3% base rate). It
+survives as `constrained=True` with a warning, and must not be used for reported
+results.
+
+A parameter the API rejects is **never dropped silently**. `strict_params=True`
+is the default and aborts the run with the raw provider error;
+`--allow-param-fallback` permits the drop.
 Either way every run writes
 `outputs/raw/<model>__<dataset>__<condition>.manifest.json` with the requested
 parameters, the effective parameters, and every parameter event with its raw
@@ -282,7 +304,7 @@ src/verifier_pilot/
                  metrics.py, bootstrap.py  macro F1, aligned precision, paired CIs
   sft/           build_dataset.py, train_lora.py
 scripts/         prepare_data, build_pairs, smoke_test, run_eval, train_sft, report
-tests/           42 tests, no network or API keys required
+tests/           46 tests, no network or API keys required
 ```
 
 Runs are **resumable**: every judgement is cached to

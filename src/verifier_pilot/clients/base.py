@@ -24,6 +24,15 @@ VALID_LABELS = (ALIGNED, NOT_ALIGNED)
 #: recorded when a provider has no equivalent of a parameter we standardise on
 UNSUPPORTED_BY_PROVIDER = "<unsupported_by_provider>"
 
+#: Output-token cap, identical for every model so the budget is not a
+#: per-model variable. The answer is one short label -- measured maxima are 20
+#: tokens (gpt-5.1, JSON schema), 35 (claude, tool_use block), 6 (gemini), and a
+#: bare word for the open-weight models -- so 64 leaves headroom without ever
+#: binding. A cap that never binds does not affect the output; if a run starts
+#: reporting finish_reason 'length' / 'max_tokens', raise it here for all models
+#: at once and record it in EXPERIMENT_LOG.md.
+MAX_ANSWER_TOKENS = 64
+
 
 class ParameterRejectedError(RuntimeError):
     """The API refused a sampling parameter and strict_params is on.
@@ -187,9 +196,21 @@ class VerifierClient(abc.ABC):
         )
 
     def params_manifest(self) -> dict:
-        """The sampling provenance for this client, for the run manifest."""
+        """The sampling provenance for this client, for the run manifest.
+
+        The model *identifier* must be a string: on local clients ``self.model``
+        is the loaded nn.Module, so ``model_id`` is preferred and anything
+        non-string falls back to the client name. The manifest is written with
+        json.dump and a non-serialisable value here kills the run before the
+        first request.
+        """
+        identifier = getattr(self, "model_id", None)
+        if not isinstance(identifier, str):
+            identifier = getattr(self, "model", None)
+        if not isinstance(identifier, str):
+            identifier = self.name
         return {
-            "model": getattr(self, "model", self.name),
+            "model": identifier,
             "provider": self.provider,
             "strict_params": self.strict_params,
             "requested": getattr(self, "requested_params", {}),

@@ -54,11 +54,30 @@ REGISTRY: dict[str, ModelSpec] = {
     ),
 }
 
-#: convenience groups for --models
+#: Models excluded from the convenience groups, with the reason.
+#: They remain runnable by naming them explicitly on --models.
+EXCLUDED_FROM_GROUPS: dict[str, str] = {
+    "deepseek-coder-v2-lite": (
+        "16B MoE, ~31GB in bf16: does not fit a single 24GB card, so it would have "
+        "to run 4-bit while the Qwen models run bf16. That precision mismatch "
+        "confounds RQ2. Run it explicitly with --models deepseek-coder-v2-lite "
+        "--load-in-4bit and record the deviation in EXPERIMENT_LOG.md."
+    ),
+}
+
+#: convenience groups for --models. A group never silently pulls in a model the
+#: experiment plan excluded -- an earlier version did, and started a 31GB
+#: download in the middle of a run.
 GROUPS: dict[str, list[str]] = {
-    "closed": [k for k, v in REGISTRY.items() if v.group == "closed"],
-    "open": [k for k, v in REGISTRY.items() if v.group == "open"],
-    "all": list(REGISTRY),
+    "closed": [
+        k for k, v in REGISTRY.items()
+        if v.group == "closed" and k not in EXCLUDED_FROM_GROUPS
+    ],
+    "open": [
+        k for k, v in REGISTRY.items()
+        if v.group == "open" and k not in EXCLUDED_FROM_GROUPS
+    ],
+    "all": [k for k in REGISTRY if k not in EXCLUDED_FROM_GROUPS],
 }
 
 
@@ -68,7 +87,12 @@ def resolve(names: list[str]) -> list[str]:
     for name in names:
         if name in GROUPS:
             out.extend(GROUPS[name])
+            for excluded, reason in EXCLUDED_FROM_GROUPS.items():
+                if REGISTRY[excluded].group in (name, "all") or name == "all":
+                    print(f"  note: {excluded!r} is not in group {name!r} -- {reason}")
         elif name in REGISTRY:
+            if name in EXCLUDED_FROM_GROUPS:
+                print(f"  note: running excluded model {name!r} -- {EXCLUDED_FROM_GROUPS[name]}")
             out.append(name)
         else:
             raise SystemExit(

@@ -35,7 +35,10 @@ from __future__ import annotations
 import json
 
 from ..env import get_api_key
-from .base import ERROR, ParameterRejectedError, Prediction, RetryingClient, parse_label
+from .base import (
+    ERROR, MAX_ANSWER_TOKENS, ParameterRejectedError, Prediction, RetryingClient,
+    parse_label,
+)
 
 MODEL = "gemini-2.5-flash"
 
@@ -65,7 +68,7 @@ class GeminiClient(RetryingClient):
         name: str | None = None,
         temperature: float = 0.0,
         seed: int | None = 42,
-        max_output_tokens: int = 256,
+        max_output_tokens: int = MAX_ANSWER_TOKENS,
         thinking_budget: int = 0,
         max_retries: int = 5,
         strict_params: bool = True,
