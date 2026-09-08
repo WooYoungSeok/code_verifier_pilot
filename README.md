@@ -121,6 +121,7 @@ python scripts/run_eval.py --models open   --datasets all     # needs a GPU
 # 5. Experiment 3 -- context ablation
 python scripts/run_eval.py --models closed --datasets pymeta  --conditions P1 P2
 python scripts/run_eval.py --models closed --datasets coj2022 --conditions C1 C2
+python scripts/run_eval.py --models all    --datasets coj2022 --conditions C3
 
 # 6. results
 python scripts/report.py --bootstrap 1000 --compare
@@ -174,10 +175,29 @@ Evaluation uses two balanced 50:50 sets that **share their positives**:
 |-|--------|---------|
 | primary | **P1** problem + student code | **C1** student code only |
 | upper bound | **P2** problem + reference + student code | **C2** student code + repaired reference |
+| context test | -- | **C3** reconstructed problem statement + student code |
 
-COJ2022 ships no natural-language problem statement, only a `Problem_ID` --
-which is why its primary condition is code-only. If C2 is much stronger than C1,
-the limit is missing problem context rather than verifier capability.
+COJ2022 ships no natural-language problem statement, only a `Problem_ID`, which
+is why its primary condition is code-only.
+
+**C2 is an upper bound, not a context test.** Diffing the repaired program
+against the buggy one localises the defect -- information no RL verifier has.
+**C3** is the context test: it supplies the specification and no hint about the
+bug, making COJ structurally parallel to PyMETA's P1, so a C3-vs-C1 gap
+separates "cannot judge semantic errors" from "had no idea what the program was
+supposed to do".
+
+C3's statements were reconstructed by hand from each problem's judge test cases
+(`test_case.csv`) and are committed as `data/coj2022_statements.json`. Two
+choices there are deliberate and recorded in the file's provenance block: no
+model that the pilot evaluates authored them, and they carry no hedging -- a
+problem whose rule the test cases did not determine is **excluded** rather than
+described uncertainly, so statement confidence never becomes a hidden variable.
+That keeps 66 of 83 eligible problems, 834 of 1,017 pairs.
+
+Joining needs care: `error_info.csv` uses an integer-like `Problem_ID` while
+`submission_info.csv` and `test_case.csv` use a hash. The two are 1:1 (498 to
+498, verified) but not interchangeable, so C3 joins through the submission id.
 
 ### Leakage control
 
@@ -304,7 +324,7 @@ src/verifier_pilot/
                  metrics.py, bootstrap.py  macro F1, aligned precision, paired CIs
   sft/           build_dataset.py, train_lora.py
 scripts/         prepare_data, build_pairs, smoke_test, run_eval, train_sft, report
-tests/           46 tests, no network or API keys required
+tests/           50 tests, no network or API keys required
 ```
 
 Runs are **resumable**: every judgement is cached to

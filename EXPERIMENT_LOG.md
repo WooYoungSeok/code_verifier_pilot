@@ -49,9 +49,9 @@ claude forced tool use strict; open-weight greedy generation + parse.
 | model | temperature | seed | notes |
 |-------|-------------|------|-------|
 | gpt-5.1 | **0.0** | **42** | `reasoning_effort` deliberately **unset** -- see 2026-09-07 entry |
-| gemini-2.5-flash | **0.0** | **42** | `thinking_budget=0`, `safety_threshold=OFF`, `max_output_tokens=256` |
+| gemini-2.5-flash | **0.0** | **42** | excluded from the pilot (quota); `thinking_budget=0`, `safety_threshold=OFF` |
 | claude-sonnet-4.6 | **0.0** | **not available** | Messages API has no seed; `thinking` omitted |
-| open-weight | n/a (greedy) | 42 | `do_sample=False`, `max_new_tokens=32`, generate + parse |
+| open-weight | n/a (greedy) | 42 | `do_sample=False`, generate + parse |
 
 **Known limitation to state in the write-up:** Claude Sonnet 4.6 cannot be
 seed-pinned -- `anthropic.messages.create` exposes no seed parameter, verified
@@ -97,8 +97,22 @@ COJ2022 339 submissions / 1,017 pairs. **2,178 calls per model.**
 
 ### Conditions
 
-`P1` problem + code, `P2` problem + reference + code (PyMETA).
-`C1` code only, `C2` code + repaired reference (COJ2022).
+| id | dataset | context given to the verifier | role |
+|----|---------|-------------------------------|------|
+| `P1` | PyMETA | problem statement + student code | primary |
+| `P2` | PyMETA | problem statement + reference solution + student code | upper bound |
+| `C1` | COJ2022 | student code only | primary |
+| `C2` | COJ2022 | student code + repaired reference program | upper bound |
+| `C3` | COJ2022 | reconstructed problem statement + student code | parallel to P1 |
+
+`C2` is an upper bound, not a context test: diffing the repaired program against
+the buggy one localises the defect, which is information no RL verifier has.
+`C3` is the honest context test -- it gives the specification and no hint about
+the bug, so it answers "is COJ hard because the model cannot judge semantic
+errors, or because it had no idea what the program should do?". Statements are
+hand-written from the judge test cases and live in
+`data/coj2022_statements.json`; problems whose rule the test cases did not
+determine carry none and drop out of C3.
 
 ### Metrics
 
