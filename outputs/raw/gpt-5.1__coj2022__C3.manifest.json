@@ -1,0 +1,31 @@
+{
+  "model": "gpt-5.1",
+  "dataset": "coj2022",
+  "condition": "C3",
+  "n_pairs": 834,
+  "cache_version": 1,
+  "sampling": {
+    "model": "gpt-5.1",
+    "provider": "openai",
+    "strict_params": true,
+    "requested": {
+      "temperature": 0.0,
+      "reasoning_effort": null,
+      "seed": 42,
+      "max_completion_tokens": 64,
+      "response_format": "json_schema(strict)",
+      "decoding": "api_default"
+    },
+    "effective": {
+      "temperature": 0.0,
+      "reasoning_effort": null,
+      "seed": 42,
+      "max_completion_tokens": 64,
+      "response_format": "json_schema(strict)",
+      "decoding": "api_default"
+    },
+    "param_events": []
+  },
+  "param_events_history": [],
+  "runs": 2
+}

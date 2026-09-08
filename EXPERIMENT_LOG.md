@@ -111,6 +111,44 @@ excluded from scoring and reported separately.
 
 ## Changelog
 
+### 2026-09-08 -- Condition C3 added: COJ2022 with reconstructed problem statements
+
+**What changed.** New condition `C3` = problem statement + student code, making
+COJ2022 structurally parallel to PyMETA's `P1`. Statements are hand-written from
+each problem's judge test cases and committed as `data/coj2022_statements.json`.
+
+**Why.** `C1` gives the verifier a C program and an error category with no idea
+what the program was supposed to do. A low COJ score under C1 is therefore
+ambiguous between "cannot judge semantic errors" and "had no specification to
+judge against". C3 separates them.
+
+**Authorship, and why it matters.** No evaluated model wrote the statements --
+they were written in-session by Claude Opus 5, which is not in the evaluation
+set (gpt-5.1, claude-sonnet-4-6, Qwen2.5-Coder-7B, Qwen2.5-7B). Generating them
+with gpt-5.1 would have let gpt-5.1 read its own phrasing while every other
+model read someone else's. The residual concern is family affinity with
+claude-sonnet-4-6; state it in the write-up.
+
+**No hedging, exclusion instead.** A real assignment never says "the rule here
+is unclear", and a hedge would tell the verifier its context is unreliable for
+reasons unrelated to the research question -- statement confidence would become
+a hidden variable. Problems whose rule the test cases did not determine are
+therefore excluded. 66 of the 83 test-split problems with >= 3 usable test cases
+were reconstructible: 834 of 1,017 pairs (82%), 278 submissions, 58 problems.
+
+**Join hazard.** `error_info.csv` uses an integer-like `Problem_ID`;
+`submission_info.csv` and `test_case.csv` use a hash. The spaces are 1:1
+(498 <-> 498, verified, unambiguous in both directions) but not interchangeable,
+so C3 joins through the submission id. The existing problem_disjoint split used
+the integer id and is unaffected, because the mapping is 1:1.
+
+**Does not invalidate C1.** Rebuilding the pair file left every pair_id and
+target unchanged, so C1 pairs directly against C3 with no re-run; the paired
+bootstrap restricts itself to shared submissions.
+
+**test_case.csv is mostly junk.** 237,924 of its 240,682 rows carry an empty
+Problem_ID. Real problems have a median of 5 cases at a median of 22 characters.
+
 ### 2026-09-07 -- Gemini 2.5 Flash dropped from the pilot: free-tier quota is 20/day
 
 **Decision.** `gemini-2.5-flash` is excluded from the model groups. The closed
@@ -337,10 +375,64 @@ documented in `README.md`.
 
 ## Results collected so far
 
-| date | model | dataset | condition | status |
-|------|-------|---------|-----------|--------|
-| 2026-09-07 | all closed | -- | -- | smoke test passed, 2 fixtures each |
-| -- | -- | -- | -- | **no full runs completed yet** |
+All zero-shot, test split, `--cap 30`, problem_disjoint. Manifests with the
+exact sampling parameters sit next to each result file in `outputs/raw/`.
+Failures: 0 across every run.
 
-Add a row when a run finishes, and point at its manifest so the settings stay
-recoverable.
+### Headline, macro F1 (95% CI, submission-clustered bootstrap, 1000 resamples)
+
+| model | PyMETA P1 | COJ2022 C1 |
+|-------|-----------|------------|
+| gpt-5.1 | **0.8000** [0.778, 0.821] | 0.6043 [0.571, 0.634] |
+| claude-sonnet-4.6 | **0.7997** [0.775, 0.824] | **0.6656** [0.636, 0.694] |
+| qwen2.5-7b | 0.6481 [0.618, 0.677] | 0.4605 [0.438, 0.486] |
+| qwen2.5-coder-7b | 0.5774 [0.546, 0.609] | 0.4259 [0.410, 0.444] |
+
+### Confirmed by paired bootstrap
+
+| finding | PyMETA | COJ2022 C1 | COJ2022 C3 |
+|---------|--------|-----------|-----------|
+| general Qwen beats the **code-specialised** one | +0.0707 p<0.001 * | +0.0346 p=0.002 * | +0.0288 p=0.018 * |
+| claude vs gpt-5.1 | -0.0003 p=0.960 (tie) | +0.0613 p<0.001 * | +0.0636 p=0.002 * |
+
+Coding specialisation *hurts* on this task, replicated three times across two
+datasets and two languages. The two frontier models are indistinguishable on
+Python interpreter errors but not on C semantic errors, where Claude leads.
+
+### Context ablation, C3 - C1 on the same 834 pairs
+
+| model | diff | 95% CI | p |
+|-------|------|--------|---|
+| gpt-5.1 | +0.0408 | [+0.011, +0.070] | 0.000 * |
+| claude-sonnet-4.6 | +0.0336 | [+0.006, +0.061] | 0.012 * |
+| qwen2.5-7b | -0.0216 | [-0.048, +0.004] | 0.112 |
+| qwen2.5-coder-7b | -0.0079 | [-0.027, +0.011] | 0.432 |
+
+A problem statement helps the frontier models significantly and does nothing for
+the open ones, which answer `not_aligned` for 97-99% of pairs with or without it.
+But it closes only **20-25%** of the PyMETA-to-COJ gap (gpt-5.1 0.205 -> 0.164,
+claude 0.134 -> 0.100). **Roughly three quarters of RQ4's effect is a genuine
+difficulty difference between execution errors and semantic implementation
+errors, not missing context.**
+
+### Reward-model safety (aligned precision / false-aligned rate)
+
+| model | dataset | aligned precision | false-aligned |
+|-------|---------|-------------------|---------------|
+| gpt-5.1 | PyMETA P1 | 0.6878 | 0.1848 |
+| claude-sonnet-4.6 | PyMETA P1 | 0.7040 | 0.1641 |
+| gpt-5.1 | COJ C1 | **0.6812** | **0.0649** |
+| claude-sonnet-4.6 | COJ C1 | 0.5526 | 0.2257 |
+| gpt-5.1 | COJ C3 | 0.6940 | 0.0737 |
+| claude-sonnet-4.6 | COJ C3 | 0.6098 | 0.1853 |
+
+**Macro F1 and reward safety disagree.** On COJ, Claude leads on macro F1 while
+its false-aligned rate is 3.5x gpt-5.1's -- and false-aligned is exactly what an
+RL policy learns to exploit. Choosing a reward verifier by macro F1 is wrong.
+Giving Claude the problem statement improves both at once (precision 0.559 ->
+0.610, false-aligned 0.214 -> 0.185).
+
+### Not yet run
+
+P2 (PyMETA reference ablation), C2 (COJ repaired-reference upper bound), and the
+whole SFT arm (RQ3). Gemini is excluded (free-tier quota 20/day).

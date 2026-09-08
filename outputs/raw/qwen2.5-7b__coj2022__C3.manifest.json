@@ -1,0 +1,35 @@
+{
+  "model": "qwen2.5-7b",
+  "dataset": "coj2022",
+  "condition": "C3",
+  "n_pairs": 834,
+  "cache_version": 1,
+  "sampling": {
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "provider": "local",
+    "strict_params": true,
+    "requested": {
+      "decoding": "greedy (do_sample=False)",
+      "temperature": "n/a (greedy)",
+      "seed": 42,
+      "answer_channel": "greedy generation + parse",
+      "max_new_tokens": 64,
+      "max_input_tokens": 8192,
+      "dtype": "bfloat16",
+      "adapter": null
+    },
+    "effective": {
+      "decoding": "greedy (do_sample=False)",
+      "temperature": "n/a (greedy)",
+      "seed": 42,
+      "answer_channel": "greedy generation + parse",
+      "max_new_tokens": 64,
+      "max_input_tokens": 8192,
+      "dtype": "bfloat16",
+      "adapter": null
+    },
+    "param_events": []
+  },
+  "param_events_history": [],
+  "runs": 2
+}
