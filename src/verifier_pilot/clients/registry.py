@@ -57,6 +57,14 @@ REGISTRY: dict[str, ModelSpec] = {
 #: Models excluded from the convenience groups, with the reason.
 #: They remain runnable by naming them explicitly on --models.
 EXCLUDED_FROM_GROUPS: dict[str, str] = {
+    "gemini-2.5-flash": (
+        "free-tier quota is 20 requests/day for this model "
+        "(quotaId GenerateRequestsPerDayPerProjectPerModel-FreeTier, quotaValue 20), "
+        "and the Batch API returns FAILED_PRECONDITION without billing enabled. "
+        "The pilot needs 2,178 calls per model. Enable billing on the Google AI "
+        "Studio project, then run --models gemini-2.5-flash explicitly; the "
+        "per-pair cache fills in just that model."
+    ),
     "deepseek-coder-v2-lite": (
         "16B MoE, ~31GB in bf16: does not fit a single 24GB card, so it would have "
         "to run 4-bit while the Qwen models run bf16. That precision mismatch "

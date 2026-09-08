@@ -176,3 +176,57 @@ def test_params_manifest_is_json_serialisable_for_local_clients():
     manifest = client.params_manifest()
     assert manifest["model"] == "Qwen/Qwen2.5-Coder-7B-Instruct"
     json.dumps(manifest)         # must not raise
+
+
+# --- retry classification ----------------------------------------------------
+
+def test_quota_429_is_retryable_despite_mentioning_billing():
+    """Google's quota 429 says 'check your plan and billing details'.
+
+    An earlier version matched the fatal marker 'billing' first and never
+    retried a single rate-limit error.
+    """
+    from verifier_pilot.clients.base import classify_error
+
+    exc = RuntimeError(
+        "429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded "
+        "your current quota, please check your plan and billing details.'}}"
+    )
+    assert classify_error(exc)[1] is True
+
+
+def test_status_code_decides_retryability():
+    from verifier_pilot.clients.base import classify_error
+
+    for message, expected in [
+        ("503 UNAVAILABLE: model is overloaded", True),
+        ("{'code': 500, 'message': 'Internal error'}", True),
+        ("401 UNAUTHENTICATED: API key not valid", False),
+        ("404 model not found", False),
+        ("400 invalid_request_error", False),
+        ("Read timed out", True),        # no status code -> substring fallback
+    ]:
+        assert classify_error(RuntimeError(message))[1] is expected, message
+
+
+def test_longer_numbers_are_not_read_as_status_codes():
+    from verifier_pilot.clients.base import _status_code
+
+    assert _status_code("request 1429 failed") is None
+    assert _status_code("got 429 back") == 429
+
+
+def test_failure_records_the_real_attempt_count():
+    """attempts must be what happened, not the retry ceiling."""
+    from verifier_pilot.clients.base import Prediction, RetryingClient
+
+    class AlwaysFatal(RetryingClient):
+        name, provider = "x", "test"
+        def _call(self, system, user):
+            raise RuntimeError("404 model not found")
+
+    client = AlwaysFatal()
+    client._init_params({})
+    prediction = client.predict("s", "u")
+    assert prediction.ok is False
+    assert prediction.attempts == 1     # fatal -> no retries

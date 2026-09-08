@@ -4,8 +4,13 @@
 !.env.example
 # anchored with a leading slash: an unanchored `data/` would also ignore
 # src/verifier_pilot/data/, which is source code, not a dataset.
+#
+# /data/ stays ignored: 159 MB of third-party datasets, and train.csv alone is
+# 104 MB -- over GitHub's 100 MB per-file limit. scripts/prepare_data.py fetches
+# them. /outputs/ is deliberately NOT ignored: 7.3 MB of results, no file over
+# 1 MB, and the judgement records carry only ids, labels and predictions -- no
+# student code -- so they are safe to publish and useful for reproducibility.
 /data/
-/outputs/
 /runs/
 /cache/
 *.ckpt

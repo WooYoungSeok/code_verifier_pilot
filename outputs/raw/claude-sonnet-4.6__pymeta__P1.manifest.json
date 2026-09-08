@@ -1,0 +1,43 @@
+{
+  "model": "claude-sonnet-4.6",
+  "dataset": "pymeta",
+  "condition": "P1",
+  "n_pairs": 1161,
+  "cache_version": 1,
+  "sampling": {
+    "model": "claude-sonnet-4-6",
+    "provider": "anthropic",
+    "strict_params": true,
+    "requested": {
+      "temperature": 0.0,
+      "seed": "<unsupported_by_provider>",
+      "max_tokens": 64,
+      "thinking": "omitted (no extended thinking; keeps temperature usable)",
+      "structured_output": "forced tool use (strict)"
+    },
+    "effective": {
+      "temperature": 0.0,
+      "seed": "<unsupported_by_provider>",
+      "max_tokens": 64,
+      "thinking": "omitted (no extended thinking; keeps temperature usable)",
+      "structured_output": "forced tool use (strict)"
+    },
+    "param_events": [
+      {
+        "parameter": "seed",
+        "action": "unsupported_by_provider",
+        "raw_error": "",
+        "detail": "anthropic.messages.create has no seed parameter; Claude runs are not seed-pinned and are expected to vary slightly between runs"
+      }
+    ]
+  },
+  "param_events_history": [
+    {
+      "parameter": "seed",
+      "action": "unsupported_by_provider",
+      "raw_error": "",
+      "detail": "anthropic.messages.create has no seed parameter; Claude runs are not seed-pinned and are expected to vary slightly between runs"
+    }
+  ],
+  "runs": 2
+}

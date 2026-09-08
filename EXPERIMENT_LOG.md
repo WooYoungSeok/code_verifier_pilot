@@ -24,7 +24,7 @@ Binary, target-conditioned. Not N-way classification.
 | key | model id | provider | group |
 |-----|----------|----------|-------|
 | `gpt-5.1` | `gpt-5.1` | openai | closed |
-| `gemini-2.5-flash` | `gemini-2.5-flash` | gemini | closed |
+| `gemini-2.5-flash` | `gemini-2.5-flash` | gemini | **excluded** -- free-tier quota 20/day, see 2026-09-07 entry |
 | `claude-sonnet-4.6` | `claude-sonnet-4-6` | anthropic | closed |
 | `qwen2.5-coder-7b` | `Qwen/Qwen2.5-Coder-7B-Instruct` | local | open |
 | `deepseek-coder-v2-lite` | `deepseek-ai/DeepSeek-Coder-V2-Lite-Instruct` | local | **excluded from groups** -- see 2026-09-07 entry |
@@ -110,6 +110,68 @@ excluded from scoring and reported separately.
 ---
 
 ## Changelog
+
+### 2026-09-07 -- Gemini 2.5 Flash dropped from the pilot: free-tier quota is 20/day
+
+**Decision.** `gemini-2.5-flash` is excluded from the model groups. The closed
+arm is gpt-5.1 and claude-sonnet-4.6; the open arm is the Qwen pair.
+
+**Why.** The quota is not a rate limit that backing off can absorb. The 429
+carries:
+
+    quotaId    GenerateRequestsPerDayPerProjectPerModel-FreeTier
+    quotaValue 20
+    model      gemini-2.5-flash
+
+**20 requests per day.** The pilot needs 2,178 per model per condition, i.e.
+about 109 days. Measured directly: 12 requests succeeded before the wall, and a
+later probe at 8.8 RPM (6.5s spacing) failed 10/10 -- pacing does not help a
+daily cap.
+
+The Batch API, which would have its own quota, returns
+`400 FAILED_PRECONDITION` on this key even for a minimal request, while
+`batches.list()` succeeds -- batch job creation requires billing to be enabled.
+
+**What this costs.** RQ1 loses one of its three frontier models; the closed-vs-open
+comparison (RQ2) and the SFT comparison (RQ3) are unaffected, since both need
+only a credible closed baseline and gpt-5.1 plus claude-sonnet-4.6 provide it.
+RQ4 (PyMETA vs COJ2022) is unaffected.
+
+**To add it back.** Enable billing on the Google AI Studio project, then
+`--models gemini-2.5-flash --datasets all`. The per-pair cache means only Gemini
+is charged; nothing already collected is re-run. Add a changelog entry when you
+do, and note that its results were collected on a different date from the others.
+
+**Also invalidated.** 365 partial gemini records (353 of them 429 failures) were
+deleted. No Gemini numbers have been reported.
+
+### 2026-09-07 -- INCIDENT: editing source during a live run killed two models
+
+**What happened.** The closed-model run was launched, then `MAX_ANSWER_TOKENS`
+was added to `clients/base.py` while it was still executing. `registry.build()`
+imports each provider module lazily, so when the run reached gemini and claude
+it read the *new* `gemini.py` / `anthropic_client.py` off disk -- which import
+`MAX_ANSWER_TOKENS` -- against the *old* `base` module already resident in
+memory, which does not define it:
+
+    [SETUP FAILED] ImportError: cannot import name 'MAX_ANSWER_TOKENS'
+                   from 'verifier_pilot.clients.base'
+
+gpt-5.1 finished normally because its module was imported before the edit.
+gemini and claude never started, so no results were lost or corrupted -- the
+failure was loud and at setup time, not silent mid-run.
+
+**Rule.** Do not edit `src/` while a run is in flight. Either wait for it to
+finish, or stop it first. The per-pair cache makes stopping cheap: nothing
+already answered is re-paid.
+
+**Consequence for provenance.** Because gemini and claude never ran, they were
+re-launched under the unified `MAX_ANSWER_TOKENS = 64`. gpt-5.1's completed
+results were produced under the previous per-model cap of 512. See the
+token-cap entry: the cap never bound in any run (verified: zero records with
+`finish_reason` `length`/`max_tokens`, max 20 output tokens for gpt-5.1), so the
+outputs are what a 64 cap would have produced, and the manifests record the
+value each run actually used.
 
 ### 2026-09-07 -- Output-token cap unified at 64 for every model
 

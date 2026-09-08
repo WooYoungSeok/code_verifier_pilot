@@ -131,16 +131,51 @@ FATAL_MARKERS: tuple[str, ...] = (
 )
 
 
+#: HTTP status codes decide retryability before any substring matching, because
+#: provider messages mix vocabularies. Google's quota 429 reads "You exceeded
+#: your current quota, please check your plan and billing details" -- it matches
+#: the fatal marker "billing" and the retryable markers "429"/"quota" at once,
+#: and an earlier version checked fatal first and so never retried a single
+#: rate-limit error.
+_RETRYABLE_STATUS = frozenset({408, 409, 425, 429, 500, 502, 503, 504, 529})
+_FATAL_STATUS = frozenset({400, 401, 403, 404, 405, 422})
+
+#: A standalone 3-digit number, not part of a longer one (so 1429 and 4299
+#: do not read as a 429).
+_STATUS_PATTERN = re.compile(r"(?<!\d)(\d{3})(?!\d)")
+
+
+def _status_code(text: str) -> int | None:
+    """First plausible HTTP status code in a provider error string."""
+    for match in _STATUS_PATTERN.finditer(text):
+        code = int(match.group(1))
+        if code in _RETRYABLE_STATUS or code in _FATAL_STATUS:
+            return code
+    return None
+
+
 def classify_error(exc: BaseException) -> tuple[str, bool]:
-    """Return ``(kind, retryable)`` for a provider exception."""
-    text = f"{type(exc).__name__}: {exc}".lower()
-    for marker in FATAL_MARKERS:
-        if marker in text:
-            return type(exc).__name__, False
+    """Return ``(kind, retryable)`` for a provider exception.
+
+    Status code wins when one is present. Only when none is found do we fall
+    back to substring matching, and there retryable is checked first: a message
+    that names both a rate limit and billing is a rate limit.
+    """
+    kind = type(exc).__name__
+    text = f"{kind}: {exc}"
+    lowered = text.lower()
+
+    code = _status_code(text)
+    if code is not None:
+        return kind, code in _RETRYABLE_STATUS
+
     for marker in RETRYABLE_MARKERS:
-        if marker in text:
-            return type(exc).__name__, True
-    return type(exc).__name__, False
+        if marker in lowered:
+            return kind, True
+    for marker in FATAL_MARKERS:
+        if marker in lowered:
+            return kind, False
+    return kind, False
 
 
 def backoff_sleep(attempt: int, base: float = 4.0, cap: float = 90.0, rng: random.Random | None = None) -> float:
@@ -245,7 +280,9 @@ class RetryingClient(VerifierClient):
 
     def predict(self, system: str, user: str) -> Prediction:
         last_kind = last_detail = ""
+        attempts_made = 0
         for attempt in range(self.max_retries):
+            attempts_made = attempt + 1
             started = time.monotonic()
             try:
                 prediction = self._call(system, user)
@@ -268,4 +305,4 @@ class RetryingClient(VerifierClient):
                     )
                     continue
                 break
-        return Prediction.failure(last_kind or "UnknownError", last_detail, self.max_retries)
+        return Prediction.failure(last_kind or "UnknownError", last_detail, attempts_made)
