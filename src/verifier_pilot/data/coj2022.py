@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import zipfile
 from collections import defaultdict
 from pathlib import Path
@@ -42,13 +43,30 @@ csv.field_size_limit(10**9)
 
 DATASET = "coj2022"
 GITHUB_BASE = "https://raw.githubusercontent.com/DaSESmartEdu/ErrorCLR/main/COJ2022"
-FILES = ("error_info.csv", "submission_info.csv", "source_codes.zip", "error_types_info.md")
+FILES = ("error_info.csv", "submission_info.csv", "source_codes.zip",
+         "error_types_info.md", "test_case.csv")
+
+#: Hand-written problem statements for condition C3, keyed by the *hash*
+#: Problem_ID used in submission_info.csv and test_case.csv -- NOT the
+#: integer-like Problem_ID in error_info.csv. The two are 1:1 (498 <-> 498,
+#: verified) but they are different id spaces, so C3 joins through the
+#: submission id.
+STATEMENTS_FILE = "coj2022_statements.json"
 
 _EXT_LANGUAGE = {".c": "c", ".cpp": "cpp", ".cc": "cpp", ".cxx": "cpp"}
 
 
 def raw_dir(root: Path) -> Path:
     return root / "data" / "raw" / "coj2022"
+
+
+def load_statements(root: Path) -> dict[str, str]:
+    """hash Problem_ID -> reconstructed problem statement, empty if absent."""
+    path = root / "data" / STATEMENTS_FILE
+    if not path.is_file():
+        return {}
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return {k: v["statement"] for k, v in payload.get("statements", {}).items()}
 
 
 def _read_csv(path: Path) -> list[dict]:
@@ -143,6 +161,7 @@ def load_submissions(
     errors = _read_csv(directory / "error_info.csv")
     sources = _load_sources(directory / "source_codes.zip")
     submissions = {r["ID"]: r for r in _read_csv(directory / "submission_info.csv")}
+    statements = load_statements(root)
 
     labels_by_id: dict[str, list[str]] = defaultdict(list)
     repairs_by_id: dict[str, list[tuple[int, str, str]]] = defaultdict(list)
@@ -182,7 +201,13 @@ def load_submissions(
             "submission_id": submission_id,
             "problem_id": (meta.get("Problem_ID") or info.get("Problem_ID") or "").strip(),
             "user_id": (meta.get("User_ID") or info.get("User_ID") or "").strip(),
-            "problem": None,                       # COJ2022 ships no statement
+            # COJ2022 publishes no statement; this is the hand-written
+            # reconstruction used by condition C3, or None when the problem's
+            # rule was not determinable from its test cases.
+            "problem": statements.get(
+                (info.get("Problem_ID") or "").strip()
+            ) or None,
+            "problem_id_hash": (info.get("Problem_ID") or "").strip() or None,
             "reference_code": reference,
             "reference_verified": reference_verified,
             "student_code": source,

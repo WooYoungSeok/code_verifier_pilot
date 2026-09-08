@@ -115,6 +115,14 @@ def main() -> int:
                     pairs = [p for p in pairs if p.get("reference_code")]
                     if len(pairs) < before:
                         print(f"  {condition}: {before - len(pairs)} pairs lack reference code, skipped")
+                elif condition == "C3":
+                    # COJ2022 publishes no statements; only problems whose rule was
+                    # reconstructible from their test cases carry one.
+                    before = len(pairs)
+                    pairs = [p for p in pairs if p.get("problem")]
+                    if len(pairs) < before:
+                        print(f"  {condition}: {before - len(pairs)} pairs lack a problem "
+                              f"statement, skipped ({len(pairs)} remain)")
 
                 records = runner.run(
                     client, pairs, dataset, condition, output_dir,

@@ -1,0 +1,511 @@
+{
+ "provenance": {
+  "author": "Claude Opus 5 (this session), written by reading COJ2022 test_case.csv",
+  "date": "2026-09-08",
+  "method": "Each statement was reconstructed by hand from the problem's judge test cases (Std_In/Std_Out). No evaluated model authored them: the pilot evaluates gpt-5.1, claude-sonnet-4-6, Qwen2.5-Coder-7B and Qwen2.5-7B, none of which is the author. Statements are written as a real assignment would be, with no hedging: a problem whose rule the test cases did not determine was EXCLUDED rather than described uncertainly, so that statement confidence is not a hidden variable.",
+  "inclusion_rule": "problem has >= 3 non-empty test cases AND its rule was determined confidently",
+  "problem_id_space": "hash Problem_ID as used by submission_info.csv and test_case.csv"
+ },
+ "statements": {
+  "274ad4786c3abca69fa097b85867d9a4": {
+   "statement": "Read an integer n, then n floating-point exam scores. Convert each score to a letter grade: 90 and above is A, 80-89 is B, 70-79 is C, 60-69 is D, and below 60 is E. Print the n letter grades on one line, separated by single spaces.",
+   "n_cases": 10,
+   "n_submissions": 56,
+   "index": 0
+  },
+  "94f6d7e04a4d452035300f18b984988c": {
+   "statement": "Read an integer n, then n numbers. Compute their average, maximum and minimum. Print three lines in exactly this form: 'average = X', 'max = Y', 'min = Z', where each value is shown with two digits after the decimal point.",
+   "n_cases": 3,
+   "n_submissions": 39,
+   "index": 1
+  },
+  "7eabe3a1649ffa2b3ff8c02ebfd5659f": {
+   "statement": "Read integers one at a time until a value that is zero or negative is read; that terminating value is not part of the data. Print the sum of the odd numbers among the values read.",
+   "n_cases": 10,
+   "n_submissions": 36,
+   "index": 2
+  },
+  "0e01938fc48a2cfb5f2217fbfb00722d": {
+   "statement": "Read an integer n, then n*n integers giving an n-by-n matrix in row-major order. Find a saddle point: an element that is the largest in its own row and the smallest in its own column. If one exists, print its row index and column index (both 0-based) separated by a space; otherwise print 'NO'.",
+   "n_cases": 4,
+   "n_submissions": 35,
+   "index": 3
+  },
+  "0336dcbab05b9d5ad24f4333c7658a0e": {
+   "statement": "Read two numbers: a vehicle's speed and the road's speed limit. If the speed does not exceed the limit, print 'normal'. If the speed is at least 1.5 times the limit, print 'revoke'. Otherwise print the fine amount 200.",
+   "n_cases": 10,
+   "n_submissions": 32,
+   "index": 4
+  },
+  "357a6fdf7642bf815a88822c447d9dc4": {
+   "statement": "Read a time of day as hh:mm:ss on one line and a number of seconds on the next. Add the seconds to the time and print the resulting time as h:mm:ss, wrapping around past midnight. The hour is printed without a leading zero; minutes and seconds always use two digits.",
+   "n_cases": 5,
+   "n_submissions": 31,
+   "index": 5
+  },
+  "69adc1e107f7f7d035d7baf04342e1ca": {
+   "statement": "Read a floating-point number x. Print e raised to the power x, with four digits after the decimal point.",
+   "n_cases": 10,
+   "n_submissions": 28,
+   "index": 6
+  },
+  "a597e50502f5ff68e3e25b9114205d4a": {
+   "statement": "Read three integers. Print them on one line in ascending order, separated by single spaces.",
+   "n_cases": 9,
+   "n_submissions": 27,
+   "index": 7
+  },
+  "03c6b06952c750899bb03d998e631860": {
+   "statement": "Read an arithmetic expression that ends with an '=' character. The expression contains integers and the operators +, - , * and /. Evaluate it strictly from left to right, ignoring the usual operator precedence. If a division by zero occurs, print 'ERROR'; otherwise print the result with two digits after the decimal point.",
+   "n_cases": 4,
+   "n_submissions": 26,
+   "index": 8
+  },
+  "c24cd76e1ce41366a4bbe8a49b02a028": {
+   "statement": "Read one line of text. Count the words in it, where a word is any maximal run of non-space characters, and runs of several spaces separate words just as a single space does. Print the number of words.",
+   "n_cases": 4,
+   "n_submissions": 25,
+   "index": 9
+  },
+  "d3d9446802a44259755d38e6d163e820": {
+   "statement": "Read two integers giving an hour (0-23) and a minute (0-59). Print the time spelled out in English words in lower case, for example 'fourteen forty one'. When the minute is zero, print the hour followed by \"o'clock\".",
+   "n_cases": 20,
+   "n_submissions": 18,
+   "index": 10
+  },
+  "65658fde58ab3c2b6e5132a39fae7cb9": {
+   "statement": "Read an integer n and then a lower-case string s. Shift every letter of s forward through the alphabet by n positions, wrapping from z back to a. The shift is taken modulo 26, so a shift of 0 or 26 leaves the string unchanged. Print the shifted string.",
+   "n_cases": 9,
+   "n_submissions": 17,
+   "index": 11
+  },
+  "6883966fd8f918a4aa29be29d2c386fb": {
+   "statement": "Read two integers n and k. Number n people 1 to n around a circle. Repeatedly count k people around the circle and remove the k-th, continuing from the next person, until everyone has been removed. For each position 1 to n in order, print the round in which the person at that position was removed, separated by single spaces.",
+   "n_cases": 4,
+   "n_submissions": 14,
+   "index": 12
+  },
+  "26337353b7962f533d78c762373b3318": {
+   "statement": "Read a secret number and the number of guesses allowed. Then read guesses one at a time. For a guess larger than the secret print 'Too big', for a smaller one print 'Too small'. When the secret is guessed, print 'Bingo!' if it was the first guess, 'Good Guess!' if it was the last guess allowed, and 'Lucky You!' otherwise, and stop. If a non-positive value is read, or the allowed guesses run out without success, print 'Game Over' and stop.",
+   "n_cases": 10,
+   "n_submissions": 13,
+   "index": 13
+  },
+  "3988c7f88ebcb58c6ce932b957b6f332": {
+   "statement": "Read an odd integer n. Print a diamond of n lines made of asterisks. Line i has an increasing then decreasing odd number of asterisks, each asterisk followed by a space, and is indented with leading spaces so that the diamond is centred, with the widest line containing n asterisks.",
+   "n_cases": 3,
+   "n_submissions": 12,
+   "index": 14
+  },
+  "6f4922f45568161a8cdf4ad2299f6d23": {
+   "statement": "Read the coordinates of two axis-aligned rectangles, four numbers per rectangle giving one corner and then the opposite corner. Print the area of their overlap, which is 0 when they do not overlap.",
+   "n_cases": 7,
+   "n_submissions": 12,
+   "index": 15
+  },
+  "6512bd43d9caa6e02c990b0a82652dca": {
+   "statement": "Read two integers a and b. For every integer n from a to b inclusive, print a line 'n=p1*p2*...' giving the prime factorisation of n, with the prime factors in non-decreasing order and repeated according to their multiplicity. A prime n is printed as 'n=n'.",
+   "n_cases": 3,
+   "n_submissions": 12,
+   "index": 16
+  },
+  "6c4b761a28b734fe93831e3fb400ce87": {
+   "statement": "Read characters up to a terminating '#'. Collect, in order, every hexadecimal digit among them (0-9 and the letters a-f in either case) and read those digits as one hexadecimal number, ignoring all other characters. The value is negative if a '-' appears before the first hexadecimal digit, and positive otherwise. Print the value in decimal; print 0 when no hexadecimal digit is present.",
+   "n_cases": 6,
+   "n_submissions": 11,
+   "index": 19
+  },
+  "310dcbbf4cce62f762a2aaa148d556bd": {
+   "statement": "Read a non-negative integer. Print its binary representation, without leading zeros. Zero is printed as '0'.",
+   "n_cases": 4,
+   "n_submissions": 10,
+   "index": 20
+  },
+  "53e3a7161e428b65688f14b84d61c610": {
+   "statement": "Read an integer n and then n commands, one per line, that operate on a linked list. 'add x' inserts x at the front. 'remove x' deletes the first node holding x, if any. 'find x' prints 1 if x is in the list and 0 otherwise. 'clear' empties the list. After all commands, print the list from front to back separated by single spaces, or 'empty linklist' if it is empty.",
+   "n_cases": 3,
+   "n_submissions": 10,
+   "index": 21
+  },
+  "9de6d14fff9806d4bcd1ef555be766cd": {
+   "statement": "Read a non-negative integer n. Print n factorial on the first line, and on the second line the sum 1! + 2! + ... + n!, which is 0 when n is 0.",
+   "n_cases": 5,
+   "n_submissions": 8,
+   "index": 23
+  },
+  "37693cfc748049e45d87b8c7d8b9aacd": {
+   "statement": "Read an integer. Print how it is read aloud in Chinese pinyin, using the digit names yi, er, san, si, wu, liu, qi, ba, jiu and the place names shi, bai, qian and wan, with the parts separated by single spaces. Places whose digit is zero are omitted, for example 2200 is 'er qian er bai'.",
+   "n_cases": 7,
+   "n_submissions": 8,
+   "index": 24
+  },
+  "ff4d5fbbafdf976cfdc032e3bde78de5": {
+   "statement": "Read n and m, then n integers forming a stack of cards from bottom to top, then m queries. Each query is a position counted from the top of the current stack. For each query, remove and print the card at that position; if the stack holds fewer cards than the position asks for, print 0 and remove nothing.",
+   "n_cases": 8,
+   "n_submissions": 7,
+   "index": 25
+  },
+  "28f0b864598a1291557bed248a998d4e": {
+   "statement": "Read integers until -1 is read, which ends the list and is not part of it. Then read one more integer. Print, separated by single spaces and followed by a space, the values of the list that are not equal to that final integer, in their original order.",
+   "n_cases": 4,
+   "n_submissions": 7,
+   "index": 26
+  },
+  "57aeee35c98205091e18d1140e9f38cf": {
+   "statement": "Read a floating-point number x. Print e raised to the power x, with four digits after the decimal point.",
+   "n_cases": 10,
+   "n_submissions": 7,
+   "index": 28
+  },
+  "9be40cee5b0eee1462c82c6964087ff9": {
+   "statement": "Read an integer n, then n lines each holding three integers. Sort the lines in ascending lexicographic order, comparing the first number first, then the second, then the third. Print the sorted lines, one per line, with the three numbers separated by single spaces.",
+   "n_cases": 10,
+   "n_submissions": 7,
+   "index": 31
+  },
+  "ac1dd209cbcc5e5d1c6e28598e8cbbe8": {
+   "statement": "Read a positive integer m. Consider the Fibonacci numbers 1, 1, 2, 3, 5, 8, ... numbered from 1. Print the index of the first Fibonacci number that is greater than or equal to m.",
+   "n_cases": 10,
+   "n_submissions": 7,
+   "index": 32
+  },
+  "7ef605fc8dba5425d6965fbd4c8fbe1f": {
+   "statement": "Read an integer n, then n course records, each being a course name on one line and its price on the next. Print the most expensive course and then the cheapest course, one per line, each as the price with two decimals, a comma, a space, and the course name. When n is 1 the same course is printed twice.",
+   "n_cases": 3,
+   "n_submissions": 6,
+   "index": 33
+  },
+  "caf1a3dfb505ffed0d024130f58c5cfa": {
+   "statement": "Read an integer n, then n numeric literals, one per line. For each, print the smallest suitable C type on its own line: int if it is a whole number that fits in a 32-bit signed integer, long long if it is a whole number too large for that, and double if it is written with a decimal point.",
+   "n_cases": 9,
+   "n_submissions": 6,
+   "index": 34
+  },
+  "2b24d495052a8ce66358eb576b8912c8": {
+   "statement": "Read one line of text. Count the words in it, where a word is any maximal run of non-space characters. Print the count, which is 0 for a line containing only spaces.",
+   "n_cases": 5,
+   "n_submissions": 6,
+   "index": 35
+  },
+  "389bc7bb1e1c2a5e7e147703232a88f6": {
+   "statement": "Read an integer n, then n numeric literals, one per line. For each, print the smallest suitable C type on its own line: int if it is a whole number that fits in a 32-bit signed integer, long long if it is a whole number too large for that, and double if it is written with a decimal point.",
+   "n_cases": 9,
+   "n_submissions": 6,
+   "index": 36
+  },
+  "35051070e572e47d2c26c241ab88307f": {
+   "statement": "Read a secret number and the number of guesses allowed. Then read guesses one at a time. For a guess larger than the secret print Too big, for a smaller one print Too small. When the secret is guessed, print Bingo! if it was the first guess, Good Guess! if it was the last guess allowed, and Lucky You! otherwise, and stop. If a non-positive value is read, or the allowed guesses run out without success, print Game Over and stop.",
+   "n_cases": 10,
+   "n_submissions": 6,
+   "index": 37
+  },
+  "e4a6222cdb5b34375400904f03d8e6a5": {
+   "statement": "Read two integers a and b. Print the sum of all prime numbers p with a <= p <= b.",
+   "n_cases": 5,
+   "n_submissions": 6,
+   "index": 38
+  },
+  "352fe25daf686bdb4edca223c921acea": {
+   "statement": "Read an integer n, then n records each holding a student id and a score. Print the id of every student whose score is below 60, one per line, in the order the records were read. Print nothing when no student qualifies.",
+   "n_cases": 4,
+   "n_submissions": 5,
+   "index": 39
+  },
+  "577bcc914f9e55d5e4e4f82f9f00e7d4": {
+   "statement": "Read an integer n, then n integers, then a target value. Print the 0-based index of the first element equal to the target, or -1 if the target does not occur.",
+   "n_cases": 5,
+   "n_submissions": 5,
+   "index": 40
+  },
+  "1afa34a7f984eeabdbb0a7d494132ee5": {
+   "statement": "Read a secret number and the number of guesses allowed. Then read guesses one at a time. For a guess larger than the secret print Too big, for a smaller one print Too small. When the secret is guessed, print Bingo! if it was the first guess, Good Guess! if it was the last guess allowed, and Lucky You! otherwise, and stop. If a non-positive value is read, or the allowed guesses run out without success, print Game Over and stop.",
+   "n_cases": 5,
+   "n_submissions": 5,
+   "index": 41
+  },
+  "85fc37b18c57097425b52fc7afbb6969": {
+   "statement": "Read integers one per line until 0 is read, which ends the input and is not processed. For each value n, print n divided by 2, rounded down.",
+   "n_cases": 4,
+   "n_submissions": 5,
+   "index": 42
+  },
+  "6c524f9d5d7027454a783c841250ba71": {
+   "statement": "Read a non-negative integer. Print its digits one per line, in the order they appear in the number.",
+   "n_cases": 4,
+   "n_submissions": 5,
+   "index": 43
+  },
+  "48aedb8880cab8c45637abc7493ecddd": {
+   "statement": "Read an integer n, then n*n integers giving an n-by-n matrix in row-major order. Print YES if the matrix is upper triangular, that is every element strictly below the main diagonal is zero, and NO otherwise.",
+   "n_cases": 4,
+   "n_submissions": 5,
+   "index": 45
+  },
+  "c7e1249ffc03eb9ded908c236bd1996d": {
+   "statement": "Read a hexadecimal number written with digits 0-9 and upper-case letters A-F. Print its value in decimal.",
+   "n_cases": 3,
+   "n_submissions": 4,
+   "index": 46
+  },
+  "1543843a4723ed2ab08e18053ae6dc5b": {
+   "statement": "Read a string on the first line and two characters separated by a space on the second. Print two lines: the part of the string running from the first occurrence of the first character up to and including the first occurrence of the second character, and the part running from the first occurrence of the first character to the end of the string. Print an empty line for a part that does not exist because a required character is absent.",
+   "n_cases": 10,
+   "n_submissions": 4,
+   "index": 47
+  },
+  "fc221309746013ac554571fbd180e1c8": {
+   "statement": "Read non-negative integers, one per line, until end of input. For each, print its representation in base eleven, using the letter A for the digit ten.",
+   "n_cases": 10,
+   "n_submissions": 4,
+   "index": 48
+  },
+  "8d3bba7425e7c98c50f52ca1b52d3735": {
+   "statement": "Read n and m, then n integers forming a stack of cards from bottom to top, then m queries. Each query is a position counted from the top of the current stack. For each query, remove and print the card at that position; if the stack holds fewer cards than the position asks for, print 0 and remove nothing.",
+   "n_cases": 8,
+   "n_submissions": 4,
+   "index": 49
+  },
+  "37bc2f75bf1bcfe8450a1a41c200364c": {
+   "statement": "Read two integers n and k. Number n people 1 to n around a circle. Repeatedly count k people around the circle and remove the k-th, continuing from the next person, until everyone has been removed. For each position 1 to n in order, print the round in which the person at that position was removed, separated by single spaces.",
+   "n_cases": 4,
+   "n_submissions": 3,
+   "index": 50
+  },
+  "01161aaa0b6d1345dd8fe4e481144d84": {
+   "statement": "Read an odd integer n. Print a diamond of n lines made of asterisks: the number of asterisks per line runs 1, 3, 5, ... up to n and back down to 1, and each line is indented with leading spaces so the diamond is centred.",
+   "n_cases": 10,
+   "n_submissions": 3,
+   "index": 52
+  },
+  "0a09c8844ba8f0936c20bd791130d6b6": {
+   "statement": "Read an integer n, then n numbers. Compute their average, maximum and minimum. Print three lines in exactly this form: average = X, max = Y, min = Z, where each value is shown with two digits after the decimal point.",
+   "n_cases": 3,
+   "n_submissions": 3,
+   "index": 53
+  },
+  "82cec96096d4281b7c95cd7e74623496": {
+   "statement": "Read a non-negative integer. Print its binary representation, without leading zeros. Zero is printed as 0.",
+   "n_cases": 4,
+   "n_submissions": 3,
+   "index": 56
+  },
+  "816b112c6105b3ebd537828a39af4818": {
+   "statement": "Read an integer n, then n scores. Print on one line the highest score, the lowest score, and the average of the remaining scores after one highest and one lowest have been discarded, with the average shown to two decimal places.",
+   "n_cases": 6,
+   "n_submissions": 3,
+   "index": 58
+  },
+  "13fe9d84310e77f13a6d184dbf1232f3": {
+   "statement": "Read two numbers: a vehicle's speed and the road's speed limit. If the speed does not exceed the limit, print normal. If the speed is at least 1.5 times the limit, print revoke. Otherwise print the fine amount 200.",
+   "n_cases": 10,
+   "n_submissions": 3,
+   "index": 59
+  },
+  "2050e03ca119580f74cca14cc6e97462": {
+   "statement": "Read two integers a and b. Print the sum of all composite numbers n with a <= n <= b, that is the numbers in the range that are not prime.",
+   "n_cases": 10,
+   "n_submissions": 3,
+   "index": 60
+  },
+  "ab233b682ec355648e7891e66c54191b": {
+   "statement": "Read a sequence of 0s and 1s separated by spaces. Print the length of the longest run of consecutive 0s.",
+   "n_cases": 4,
+   "n_submissions": 3,
+   "index": 61
+  },
+  "f8c1f23d6a8d8d7904fc0ea8e066b3bb": {
+   "statement": "Read a text string on the first line and a pattern string on the second. Print the 0-based index where the pattern first occurs in the text, or -1 if it does not occur.",
+   "n_cases": 6,
+   "n_submissions": 2,
+   "index": 64
+  },
+  "a86c450b76fb8c371afead6410d55534": {
+   "statement": "Read one line holding several words separated by spaces. Print the words in ascending alphabetical order, one per line.",
+   "n_cases": 9,
+   "n_submissions": 2,
+   "index": 65
+  },
+  "fb7b9ffa5462084c5f4e7e85a093e6d7": {
+   "statement": "Read an integer n, then n integers. Print how many of them are prime.",
+   "n_cases": 4,
+   "n_submissions": 2,
+   "index": 66
+  },
+  "2a38a4a9316c49e5a833517c45d31070": {
+   "statement": "Read two integers giving the number of rows and columns of a grid, then the grid itself, where 0 is an open cell and 1 is a wall. Print Yes if there is a path of open cells from the top-left corner to the bottom-right corner moving only up, down, left or right, and No otherwise.",
+   "n_cases": 5,
+   "n_submissions": 2,
+   "index": 67
+  },
+  "55743cc0393b1cb4b8b37d09ae48d097": {
+   "statement": "Read two strings, one per line. Print a single string that interleaves them, taking characters alternately starting with the first string, and appending whatever remains of the longer string once the shorter one is exhausted.",
+   "n_cases": 4,
+   "n_submissions": 2,
+   "index": 68
+  },
+  "acc3e0404646c57502b480dc052c4fe1": {
+   "statement": "Read the number of vertices and the number of edges, then that many edges, each given as two vertex numbers and a weight. Print the total weight of a minimum spanning tree of the graph.",
+   "n_cases": 3,
+   "n_submissions": 2,
+   "index": 69
+  },
+  "aa942ab2bfa6ebda4840e7360ce6e7ef": {
+   "statement": "Read the lengths of the three sides of a triangle. Print its area with two digits after the decimal point.",
+   "n_cases": 4,
+   "n_submissions": 2,
+   "index": 70
+  },
+  "da4fb5c6e93e74d3df8527599fa62642": {
+   "statement": "Read a positive integer n. Print 5 times n.",
+   "n_cases": 19,
+   "n_submissions": 1,
+   "index": 72
+  },
+  "a8c88a0055f636e4a163a5e3d16adab7": {
+   "statement": "Read a string. Print Yes if it reads the same forwards and backwards, and No otherwise.",
+   "n_cases": 6,
+   "n_submissions": 1,
+   "index": 73
+  },
+  "dd458505749b2941217ddd59394240e8": {
+   "statement": "Read a candidate password. Print too short if it is shorter than 6 characters, too long if it is longer than 30, need num if it contains no digit, and yes if it is acceptable.",
+   "n_cases": 10,
+   "n_submissions": 1,
+   "index": 74
+  },
+  "f7664060cc52bc6f3d620bcedc94a4b6": {
+   "statement": "Read two integers a and b. For every even number n with a <= n <= b that is at least 4, print a line n=p+q expressing n as the sum of two primes p and q with p <= q, choosing the smallest possible p.",
+   "n_cases": 4,
+   "n_submissions": 1,
+   "index": 77
+  },
+  "f2217062e9a397a1dca429e7d70bc6ca": {
+   "statement": "Read characters up to a terminating # character. Collect, in order, every hexadecimal digit among them (0-9 and the letters a-f in either case) and read those digits as one hexadecimal number, ignoring all other characters. The value is negative if a minus sign appears before the first hexadecimal digit, and positive otherwise. Print the value in decimal; print 0 when no hexadecimal digit is present.",
+   "n_cases": 6,
+   "n_submissions": 1,
+   "index": 78
+  },
+  "087408522c31eeb1f982bc0eaf81d35f": {
+   "statement": "Read a positive integer n. Print its double factorial, the product of n, n-2, n-4 and so on down to 2 or 1.",
+   "n_cases": 9,
+   "n_submissions": 1,
+   "index": 79
+  },
+  "d07e70efcfab08731a97e7b91be644de": {
+   "statement": "Read the number of rows and columns of a matrix, then the matrix itself. Print two lines: first the average of each column, using integer division, separated by single spaces; then the largest value of each row, separated by single spaces.",
+   "n_cases": 7,
+   "n_submissions": 1,
+   "index": 80
+  },
+  "4734ba6f3de83d861c3176a6273cac6d": {
+   "statement": "Read an integer k and the number of columns m, then the rows of a matrix. Rotate every row to the right by k positions, where k is taken modulo m. Print the resulting rows, each number followed by a space.",
+   "n_cases": 5,
+   "n_submissions": 1,
+   "index": 81
+  }
+ },
+ "excluded": [
+  {
+   "pid": "ec5decca5ed3d6b8079e2e7e7bacc9f2",
+   "n_cases": 4,
+   "n_sub": 12,
+   "index": 17
+  },
+  {
+   "pid": "b83aac23b9528732c23cc7352950e880",
+   "n_cases": 3,
+   "n_sub": 11,
+   "index": 18
+  },
+  {
+   "pid": "eaae339c4d89fc102edd9dbdb6a28915",
+   "n_cases": 4,
+   "n_sub": 9,
+   "index": 22
+  },
+  {
+   "pid": "3cec07e9ba5f5bb252d13f5f431e4bbb",
+   "n_cases": 10,
+   "n_sub": 7,
+   "index": 27
+  },
+  {
+   "pid": "c5ab0bc60ac7929182aadd08703f1ec6",
+   "n_cases": 9,
+   "n_sub": 7,
+   "index": 29
+  },
+  {
+   "pid": "ab817c9349cf9c4f6877e1894a1faa00",
+   "n_cases": 10,
+   "n_sub": 7,
+   "index": 30
+  },
+  {
+   "pid": "9766527f2b5d3e95d4a733fcfb77bd7e",
+   "n_cases": 3,
+   "n_sub": 5,
+   "index": 44
+  },
+  {
+   "pid": "4c27cea8526af8cfee3be5e183ac9605",
+   "n_cases": 9,
+   "n_sub": 3,
+   "index": 51
+  },
+  {
+   "pid": "9b04d152845ec0a378394003c96da594",
+   "n_cases": 10,
+   "n_sub": 3,
+   "index": 54
+  },
+  {
+   "pid": "d1c38a09acc34845c6be3a127a5aacaf",
+   "n_cases": 10,
+   "n_sub": 3,
+   "index": 55
+  },
+  {
+   "pid": "c16a5320fa475530d9583c34fd356ef5",
+   "n_cases": 3,
+   "n_sub": 3,
+   "index": 57
+  },
+  {
+   "pid": "3c7781a36bcd6cf08c11a970fbe0e2a6",
+   "n_cases": 4,
+   "n_sub": 3,
+   "index": 62
+  },
+  {
+   "pid": "34173cb38f07f89ddbebc2ac9128303f",
+   "n_cases": 3,
+   "n_sub": 3,
+   "index": 63
+  },
+  {
+   "pid": "550a141f12de6341fba65b0ad0433500",
+   "n_cases": 4,
+   "n_sub": 2,
+   "index": 71
+  },
+  {
+   "pid": "8e296a067a37563370ded05f5a3bf3ec",
+   "n_cases": 6,
+   "n_sub": 1,
+   "index": 75
+  },
+  {
+   "pid": "6da9003b743b65f4c0ccd295cc484e57",
+   "n_cases": 9,
+   "n_sub": 1,
+   "index": 76
+  },
+  {
+   "pid": "218a0aefd1d1a4be65601cc6ddc1520e",
+   "n_cases": 10,
+   "n_sub": 1,
+   "index": 82
+  }
+ ]
+}

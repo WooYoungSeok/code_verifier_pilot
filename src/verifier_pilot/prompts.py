@@ -11,6 +11,15 @@ Input conditions (Experiment 3, context ablation):
     COJ2022
       C1  student code only              (COJ ships no natural-language statement)
       C2  student code + repaired reference program
+      C3  problem statement + student code
+
+C3 makes COJ2022 structurally parallel to PyMETA's P1, which is what separates
+"the model cannot judge semantic errors" from "the model had no idea what the
+program was supposed to do". COJ2022 publishes no statements, so they were
+reconstructed by hand from each problem's judge test cases -- see
+data/coj2022_statements.json for authorship and the exclusion rule. Problems
+whose rule the test cases did not determine carry no statement and are dropped
+from C3 rather than given a hedged one.
 
 Nothing derived from the gold label is ever rendered: no traceback, no
 interpreter output, no buggy-line pointer, no diff. See data.leakage for the
@@ -41,11 +50,12 @@ CONDITIONS: dict[str, dict[str, bool]] = {
     "P2": {"problem": True, "reference": True},
     "C1": {"problem": False, "reference": False},
     "C2": {"problem": False, "reference": True},
+    "C3": {"problem": True, "reference": False},
 }
 
 DATASET_CONDITIONS: dict[str, tuple[str, ...]] = {
     "pymeta": ("P1", "P2"),
-    "coj2022": ("C1", "C2"),
+    "coj2022": ("C1", "C2", "C3"),
 }
 
 
